@@ -49,7 +49,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts(); // HSTS - HTTPS majburiyligi
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -59,5 +59,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
-
+app.Urls.Add($"http://*:{Environment.GetEnvironmentVariable("PORT") ?? "8080"}");
 app.Run();

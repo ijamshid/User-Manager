@@ -1,24 +1,21 @@
-
-using UserManager.Application;
+﻿using UserManager.Application;
 using UserManager.Infrastructure;
 using UserManager.Presentation.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
 var configuration = builder.Configuration;
 
+// Kesh va sessiya
 builder.Services.AddDistributedMemoryCache();
-
-// Session uchun
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    // zarur bo�lsa, boshqa opsiyalar...
+    // Zarurat bo‘lsa, boshqa sozlamalar
 });
 
+// DI servislar
 builder.Services
     .AddDatabase(configuration)
     .AddApplication()
@@ -26,20 +23,31 @@ builder.Services
     .AddConfigurations(configuration)
     .AddSessions();
 
-// Add services to the container.
+// Razor Pages
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 🔁 Avtomatik migratsiya
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await AutomatedMigration.MigrateAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Migration failed.");
+    }
+}
+
+// ✅ Production uchun xavfsizlik middleware’lari
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    app.UseHsts(); // HSTS - HTTPS majburiyligi
 }
-
-
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -53,4 +61,3 @@ app.UseAuthorization();
 app.MapRazorPages();
 
 app.Run();
-
